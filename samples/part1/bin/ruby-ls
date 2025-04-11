@@ -3,6 +3,7 @@
 ## FIXME: Replace this code with a pure Ruby clone of the ls utility
 # system("ls", *ARGV)
 require "optparse"
+require "etc"
 module RLs
   class Application
     def initialize(argv)
@@ -19,10 +20,9 @@ module RLs
         @args.each do |glob|
           Dir.glob(glob, sort: true).each do |entry|
             if Dir.exist?(entry)
-              # Should print the whole directory now
               list_directory(entry)
             else
-              puts entry
+              render_entry({:name => entry, :stat => File.stat(entry)})
             end
           end
         end
@@ -30,9 +30,72 @@ module RLs
     end
 
     def list_directory(path = ".")
-      Dir.glob("*", base: path, sort: true).each do |entry|
-        puts entry unless entry.start_with?(".")
+      entries = Dir.glob("*", base: path, sort: true).map { |entry| {:name => entry, :stat => File.stat(path + "/" + entry)} }
+      render_entries(entries)
+    end
+
+    def render_entries(entries)
+      if @options[:list]
+        total_blocks = entries.reduce(0) { |sum, entry| sum + entry[:stat].blocks }
+        puts "total #{total_blocks}"
       end
+
+      entries.each do |entry|
+        render_entry(entry)
+      end
+    end
+
+    def render_entry(entry)
+      if skip?(entry)
+        return
+      end
+
+      
+      if @options[:list]
+        stat = entry[:stat]
+        extended_attr = has_extended_attributes?(entry) ? '@' : ''
+        puts "#{get_file_type(entry)}#{mode_to_permissions_string(stat.mode)}#{extended_attr} #{stat.nlink} #{Etc.getpwuid(stat.uid).name} #{Etc.getgrgid(stat.gid).name.rjust(6)} #{stat.size.to_s.rjust(4)} #{stat.mtime.strftime("%b %d %H:%M")} #{entry[:name]}"
+      else
+        puts entry[:name]
+      end
+
+      
+    end
+
+    def get_file_type(entry)
+      # Get file type
+      case
+      when entry[:stat].directory? then 'd'
+      when entry[:stat].symlink? then 'l'
+      when entry[:stat].pipe? then 'p'
+      when entry[:stat].socket? then 's'
+      when entry[:stat].chardev? then 'c'
+      when entry[:stat].blockdev? then 'b'
+      else '-'
+      end
+    end
+
+    def mode_to_permissions_string(mode)
+      # Get permissions
+      perms = ''
+      # Owner permissions
+      perms << (mode & 0o400 != 0 ? 'r' : '-')
+      perms << (mode & 0o200 != 0 ? 'w' : '-')
+      perms << (mode & 0o100 != 0 ? 'x' : '-')
+      # Group permissions
+      perms << (mode & 0o040 != 0 ? 'r' : '-')
+      perms << (mode & 0o020 != 0 ? 'w' : '-')
+      perms << (mode & 0o010 != 0 ? 'x' : '-')
+      # Others permissions
+      perms << (mode & 0o004 != 0 ? 'r' : '-')
+      perms << (mode & 0o002 != 0 ? 'w' : '-')
+      perms << (mode & 0o001 != 0 ? 'x' : '-')
+
+      perms
+    end
+
+    def skip?(entry)
+      entry[:name].start_with?(".")
     end
 
     def parse_arguments(argv)
@@ -40,18 +103,24 @@ module RLs
       args = []
       parser = OptionParser.new
 
-      # we'll pars options later
+      parser.on("-l") { options[:list] = true }
       args = parser.parse(argv)
       
       [options, args]
+    end
+
+    def has_extended_attributes?(entry)
+      `xattr -l "#{entry[:name]}" 2>/dev/null`
+      $?.success?
     end
   end
 
   
 end
 
-begin
+# begin
   RLs::Application.new(ARGV).run
-rescue StandardError => e
-  abort "ruby-ls: #{e.message}"
-end
+# rescue StandardError => e
+  # abort "ruby-ls: #{e.message}"
+# end
+# 
