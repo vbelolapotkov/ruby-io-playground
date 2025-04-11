@@ -9,7 +9,7 @@ check("No arguments", "")
 
 check("Dir listing", "foo")
 
-# check("File glob", "foo/*.txt")
+check("File glob", "foo/*.txt")
 
 # check("Detailed output", "-l")
 
