@@ -2,25 +2,59 @@
 
 ## FIXME: Replace this code with a pure Ruby clone of the ls utility
 # system("ls", *ARGV)
-
+require "optparse"
 module RLs
   class Application
     def initialize(argv)
-      @params, @files = parse_arguments(argv)
+      @options, @args = parse_arguments(argv)
+      # puts "Options: #{@options}"
+      # puts "Args: #{@args}"
+      # puts
     end
 
     def run
-      Dir.new(".").children.sort.each do |entry|
-        puts entry unless entry.start_with?(".")
+      if @args.empty?
+        Dir.glob("*", sort: true).each do |entry|
+          puts entry unless entry.start_with?(".")
+        end
+      else
+        @args.each do |glob|
+          Dir.glob(glob, sort: true).each do |entry|
+            if Dir.exist?(entry)
+              # Should print the whole directory now
+              Dir.glob('*', base: entry, sort: true).each do |entry|
+                puts entry unless entry.start_with?(".")
+              end
+            else
+              puts entry
+            end
+          end
+        end
+      end
+
+
+      # list_directory(@args)
+    end
+
+    def list_directory(path = ".")
+      Dir.new(path).children.sort.each do |entry|
+        if args.empty?
+          puts entry unless entry.start_with?(".")
+        else
+          p entry
+        end
       end
     end
 
     def parse_arguments(argv)
-      params = {}
-      files = []
-      # parser = OptionParser.new
+      options = {}
+      args = []
+      parser = OptionParser.new
 
-      [params, files]
+      # we'll pars options later
+      args = parser.parse(argv)
+      
+      [options, args]
     end
   end
 

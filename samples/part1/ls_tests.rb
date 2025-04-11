@@ -7,7 +7,7 @@ check("No arguments", "")
 
 # TODO: Uncomment each test below and get it to pass.
 
-# check("Dir listing", "foo")
+check("Dir listing", "foo")
 
 # check("File glob", "foo/*.txt")
 
