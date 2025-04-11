@@ -14,35 +14,24 @@ module RLs
 
     def run
       if @args.empty?
-        Dir.glob("*", sort: true).each do |entry|
-          puts entry unless entry.start_with?(".")
-        end
+        list_directory
       else
         @args.each do |glob|
           Dir.glob(glob, sort: true).each do |entry|
             if Dir.exist?(entry)
               # Should print the whole directory now
-              Dir.glob('*', base: entry, sort: true).each do |entry|
-                puts entry unless entry.start_with?(".")
-              end
+              list_directory(entry)
             else
               puts entry
             end
           end
         end
       end
-
-
-      # list_directory(@args)
     end
 
     def list_directory(path = ".")
-      Dir.new(path).children.sort.each do |entry|
-        if args.empty?
-          puts entry unless entry.start_with?(".")
-        else
-          p entry
-        end
+      Dir.glob("*", base: path, sort: true).each do |entry|
+        puts entry unless entry.start_with?(".")
       end
     end
 

@@ -1,0 +1,28 @@
+bin
+data
+ls_tests.rb
+ls: foo: No such file or directory
+
+ls: foo/*.txt: No such file or directory
+
+total 8
+drwxr-xr-x@ 3 vb11  staff    96 Apr 10 18:44 bin
+drwxr-xr-x@ 6 vb11  staff   192 Apr 11 12:57 data
+-rw-r--r--@ 1 vb11  staff  1717 Apr 10 18:44 ls_tests.rb
+.
+..
+bin
+data
+ls_tests.rb
+total 8
+drwxr-xr-x@ 5 vb11  staff   160 Apr 10 18:44 .
+drwxr-xr-x@ 5 vb11  staff   160 Apr 10 18:44 ..
+drwxr-xr-x@ 3 vb11  staff    96 Apr 10 18:44 bin
+drwxr-xr-x@ 6 vb11  staff   192 Apr 11 12:57 data
+-rw-r--r--@ 1 vb11  staff  1717 Apr 10 18:44 ls_tests.rb
+ls: foo/*.txt: No such file or directory
+
+ls: missingdir: No such file or directory
+
+ls: invalid option -- Z
+usage: ls [-@ABCFGHILOPRSTUWXabcdefghiklmnopqrstuvwxy1%,] [--color=when] [-D format] [file ...]
