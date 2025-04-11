@@ -1,4 +1,34 @@
 #!/usr/bin/env ruby
 
 ## FIXME: Replace this code with a pure Ruby clone of the ls utility
-system("ls", *ARGV)
+# system("ls", *ARGV)
+
+module RLs
+  class Application
+    def initialize(argv)
+      @params, @files = parse_arguments(argv)
+    end
+
+    def run
+      Dir.new(".").children.sort.each do |entry|
+        puts entry unless entry.start_with?(".")
+      end
+    end
+
+    def parse_arguments(argv)
+      params = {}
+      files = []
+      # parser = OptionParser.new
+
+      [params, files]
+    end
+  end
+
+  
+end
+
+begin
+  RLs::Application.new(ARGV).run
+rescue StandardError => e
+  abort "ruby-ls: #{e.message}"
+end
