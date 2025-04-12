@@ -84,14 +84,6 @@ module RLs
       end
     end
 
-    def get_list_stats(entries)
-      entries.reduce({ total_blocks: 0, max_file_size: 0 }) do |hash, entry|
-        hash[:total_blocks] += entry[:stat].blocks
-        hash[:max_file_size] = [hash[:max_file_size], entry[:stat].size].max
-        hash
-      end
-    end
-
     def render_entry(entry)
       if @options[:list]
         stat = entry[:stat]
@@ -103,6 +95,16 @@ module RLs
         puts "#{mode} #{stat.nlink} #{uowner} #{gowner} #{size} #{mtime} #{entry[:name]}"
       else
         puts entry[:name]
+      end
+    end
+
+    private
+
+    def get_list_stats(entries)
+      entries.reduce({ total_blocks: 0, max_file_size: 0 }) do |hash, entry|
+        hash[:total_blocks] += entry[:stat].blocks
+        hash[:max_file_size] = [hash[:max_file_size], entry[:stat].size].max
+        hash
       end
     end
 
