@@ -15,62 +15,102 @@ module RLs
 
     def run
       if @args.empty?
-        # List current directory
         list_directory
       else
-        # List each file or directory passed as an argument
-        @args.each do |path|
-          list_single_entry(path)
-        end
+        @args.each { |path| list_single_entry(path) }
       end
     end
 
     def list_directory(path = ".")
       entries = Dir.entries(path)
-        .select { |name| !skip?(name) }
+        .reject { |name| skip?(name) }
         .sort
-        .map { |name| {:name => name, :stat => File.stat(path + "/" + name)} }
-      render_entries(entries)
+        .map { |name| {:name => name, :stat => File.stat(path + "/" + name), :has_extended_attributes? => has_extended_attributes?(path + "/" + name) } }
+      @display.render_entries(entries)
     end
 
     def list_single_entry(path)
       raise "#{path}: No such file or directory" unless File.exist?(path)
       
       if File.directory?(path)
-        list_directory(path)
+       list_directory(path)
       else
-        render_entry({:name => path, :stat => File.stat(path)})
+        entry = {:name => path, :stat => File.stat(path), :has_extended_attributes? => has_extended_attributes?(path)}
+        @display.render_entry(entry)
       end      
     end
 
+    def skip?(name)
+      @options[:list_all] ? false : name.start_with?(".")
+    end
+
+    def parse_arguments(argv)
+      options = {}
+      args = []
+      parser = OptionParser.new
+
+      parser.on("-l") { options[:list] = true }
+      parser.on("-a") { options[:list_all] = true }
+      args = parser.parse(argv)
+      
+      [options, args]
+    end
+
+    def has_extended_attributes?(name)
+      `xattr -l "#{name}" 2>/dev/null`
+      $?.success?
+    end
+  end
+
+  # This class is responsible for rendering the entries in the correct format.
+  class Display
+    def initialize(options)
+      @options = options
+      @size_columt_width = 3
+    end
+
+    # Each entry is a hash with a :name and a :stat.
     def render_entries(entries)
       if @options[:list]
-        total_blocks, max_size = entries.reduce([0, 0]) do |acc, entry|
-          acc[0] += entry[:stat].blocks
-          acc[1] = [acc[1], entry[:stat].size].max
-          acc
-        end
-
-        size_formatting = max_size.to_s.size + 1 # +1 for padding
-        puts "total #{total_blocks}"
+        list_stats = get_list_stats(entries)
+        # Update size column width
+        @size_columt_width = list_stats[:max_file_size].to_s.size + 1 # +1 for padding
+        
+        puts "total #{list_stats[:total_blocks]}"
       end
 
-
       entries.each do |entry|
-        render_entry(entry, size_formatting)
+        render_entry(entry)
       end
     end
 
-    def render_entry(entry, size_formatting = 3)
+    def get_list_stats(entries)
+      entries.reduce({ total_blocks: 0, max_file_size: 0 }) do |hash, entry|
+        hash[:total_blocks] += entry[:stat].blocks
+        hash[:max_file_size] = [hash[:max_file_size], entry[:stat].size].max
+        hash
+      end
+    end
+
+    def render_entry(entry)
       if @options[:list]
         stat = entry[:stat]
-        extended_attr = has_extended_attributes?(entry) ? '@' : ''
-        puts "#{get_file_type(entry)}#{mode_to_permissions_string(stat.mode)}#{extended_attr} #{stat.nlink} #{Etc.getpwuid(stat.uid).name} #{Etc.getgrgid(stat.gid).name.rjust(6)} #{stat.size.to_s.rjust(size_formatting)} #{stat.mtime.strftime("%b %d %H:%M")} #{entry[:name]}"
+        mode = mode_to_s(entry)
+        uowner = Etc.getpwuid(stat.uid).name
+        gowner = Etc.getgrgid(stat.gid).name.rjust(6)
+        size = stat.size.to_s.rjust(@size_columt_width)
+        mtime = stat.mtime.strftime("%b %d %H:%M")
+        puts "#{mode} #{stat.nlink} #{uowner} #{gowner} #{size} #{mtime} #{entry[:name]}"
       else
         puts entry[:name]
       end
+    end
 
-      
+    def mode_to_s(entry)
+      file_type = get_file_type(entry)
+      permissions = mode_to_permissions_string(entry[:stat].mode)
+      extended_attr = entry[:has_extended_attributes?] ? '@' : ''
+      "#{file_type}#{permissions}#{extended_attr}"
     end
 
     def get_file_type(entry)
@@ -103,38 +143,6 @@ module RLs
       perms << (mode & 0o001 != 0 ? 'x' : '-')
 
       perms
-    end
-
-    def skip?(name)
-      @options[:list_all] ? false : name.start_with?(".")
-    end
-
-    def parse_arguments(argv)
-      options = {}
-      args = []
-      parser = OptionParser.new
-
-      parser.on("-l") { options[:list] = true }
-      parser.on("-a") { options[:list_all] = true }
-      args = parser.parse(argv)
-      
-      [options, args]
-    end
-
-    def has_extended_attributes?(entry)
-      `xattr -l "#{entry[:name]}" 2>/dev/null`
-      $?.success?
-    end
-  end
-
-  # This class is responsible for rendering the entries in the correct format.
-  class Display
-    def initialize(options)
-      @options = options
-    end
-    
-    def render_entries(entries)
-      
     end
   end
 end
