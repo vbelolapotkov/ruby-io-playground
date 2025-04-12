@@ -18,6 +18,8 @@ module RLs
         list_directory
       else
         @args.each do |glob|
+          raise "#{glob}: No such file or directory" unless File.exist?(glob)
+            
           Dir.glob(glob, sort: true).each do |entry|
             if Dir.exist?(entry)
               list_directory(entry)
@@ -129,9 +131,8 @@ module RLs
   
 end
 
-# begin
+begin
   RLs::Application.new(ARGV).run
-# rescue StandardError => e
-  # abort "ruby-ls: #{e.message}"
-# end
-# 
+rescue StandardError => e
+  abort "ls: #{e.message}"
+end 
