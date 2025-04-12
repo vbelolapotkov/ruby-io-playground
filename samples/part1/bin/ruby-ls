@@ -5,6 +5,10 @@
 require "optparse"
 require "etc"
 
+# This is very minimalistic implementation of ls command.
+# It only supports a few options and doesn't handle many edge cases.
+# It's created just to practice Ruby and its basic file system operations.
+
 # Intentionally keeping everything in the same file for simplicity. In prod version I'd split this into multiple files.
 module RLs
   class Application
