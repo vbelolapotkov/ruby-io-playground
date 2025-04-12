@@ -21,6 +21,8 @@ module RLs
       end
     end
 
+    private
+
     def list_directory(path = ".")
       entries = Dir.entries(path)
         .reject { |name| skip?(name) }
