@@ -4,29 +4,23 @@
 # system("ls", *ARGV)
 require "optparse"
 require "etc"
+
+# Intentionally keeping everything in the same file for simplicity. In prod version I'd split this into multiple files.
 module RLs
   class Application
     def initialize(argv)
       @options, @args = parse_arguments(argv)
-      # puts "Options: #{@options}"
-      # puts "Args: #{@args}"
-      # puts
+      @display = Display.new(@options)
     end
 
     def run
       if @args.empty?
+        # List current directory
         list_directory
       else
-        @args.each do |glob|
-          raise "#{glob}: No such file or directory" unless File.exist?(glob)
-            
-          Dir.glob(glob, sort: true).each do |entry|
-            if Dir.exist?(entry)
-              list_directory(entry)
-            else
-              render_entry({:name => entry, :stat => File.stat(entry)})
-            end
-          end
+        # List each file or directory passed as an argument
+        @args.each do |path|
+          list_single_entry(path)
         end
       end
     end
@@ -37,6 +31,16 @@ module RLs
         Dir.glob("*", base: path, sort: true)
       entries = entries.map { |entry| {:name => entry, :stat => File.stat(path + "/" + entry)} }
       render_entries(entries)
+    end
+
+    def list_single_entry(path)
+      raise "#{path}: No such file or directory" unless File.exist?(path)
+      
+      if File.directory?(path)
+        list_directory(path)
+      else
+        render_entry({:name => path, :stat => File.stat(path)})
+      end      
     end
 
     def render_entries(entries)
@@ -128,7 +132,16 @@ module RLs
     end
   end
 
-  
+  # This class is responsible for rendering the entries in the correct format.
+  class Display
+    def initialize(options)
+      @options = options
+    end
+    
+    def render_entries(entries)
+      
+    end
+  end
 end
 
 begin
