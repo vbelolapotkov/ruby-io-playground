@@ -39,16 +39,23 @@ module RLs
 
     def render_entries(entries)
       if @options[:list]
-        total_blocks = entries.reduce(0) { |sum, entry| sum + entry[:stat].blocks }
+        total_blocks, max_size = entries.reduce([0, 0]) do |acc, entry|
+          acc[0] += entry[:stat].blocks
+          acc[1] = [acc[1], entry[:stat].size].max
+          acc
+        end
+
+        size_formatting = max_size.to_s.size + 1 # +1 for padding
         puts "total #{total_blocks}"
       end
 
+
       entries.each do |entry|
-        render_entry(entry)
+        render_entry(entry, size_formatting)
       end
     end
 
-    def render_entry(entry)
+    def render_entry(entry, size_formatting = 3)
       if skip?(entry)
         return
       end
@@ -57,7 +64,7 @@ module RLs
       if @options[:list]
         stat = entry[:stat]
         extended_attr = has_extended_attributes?(entry) ? '@' : ''
-        puts "#{get_file_type(entry)}#{mode_to_permissions_string(stat.mode)}#{extended_attr} #{stat.nlink} #{Etc.getpwuid(stat.uid).name} #{Etc.getgrgid(stat.gid).name.rjust(6)} #{stat.size.to_s.rjust(4)} #{stat.mtime.strftime("%b %d %H:%M")} #{entry[:name]}"
+        puts "#{get_file_type(entry)}#{mode_to_permissions_string(stat.mode)}#{extended_attr} #{stat.nlink} #{Etc.getpwuid(stat.uid).name} #{Etc.getgrgid(stat.gid).name.rjust(6)} #{stat.size.to_s.rjust(size_formatting)} #{stat.mtime.strftime("%b %d %H:%M")} #{entry[:name]}"
       else
         puts entry[:name]
       end
