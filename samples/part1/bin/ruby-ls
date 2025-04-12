@@ -26,10 +26,10 @@ module RLs
     end
 
     def list_directory(path = ".")
-      entries = @options[:list_all] ? 
-        Dir.entries(path).sort : 
-        Dir.glob("*", base: path, sort: true)
-      entries = entries.map { |entry| {:name => entry, :stat => File.stat(path + "/" + entry)} }
+      entries = Dir.entries(path)
+        .select { |name| !skip?(name) }
+        .sort
+        .map { |name| {:name => name, :stat => File.stat(path + "/" + name)} }
       render_entries(entries)
     end
 
@@ -62,11 +62,6 @@ module RLs
     end
 
     def render_entry(entry, size_formatting = 3)
-      if skip?(entry)
-        return
-      end
-
-      
       if @options[:list]
         stat = entry[:stat]
         extended_attr = has_extended_attributes?(entry) ? '@' : ''
@@ -110,8 +105,8 @@ module RLs
       perms
     end
 
-    def skip?(entry)
-      @options[:list_all] ? false : entry[:name].start_with?(".")
+    def skip?(name)
+      @options[:list_all] ? false : name.start_with?(".")
     end
 
     def parse_arguments(argv)
