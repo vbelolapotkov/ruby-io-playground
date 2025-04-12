@@ -133,6 +133,10 @@ end
 
 begin
   RLs::Application.new(ARGV).run
+rescue OptionParser::InvalidOption => e
+  # Have to rewrite message to match ls formatting
+  message = "invalid option -- #{e.args.map { |arg| arg.gsub('-', '') }.join(', ')}"
+  abort "ls: #{message}\nusage: ls [-@ABCFGHILOPRSTUWXabcdefghiklmnopqrstuvwxy1%,] [--color=when] [-D format] [file ...]"
 rescue StandardError => e
   abort "ls: #{e.message}"
 end 
