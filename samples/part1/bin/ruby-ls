@@ -30,7 +30,10 @@ module RLs
     end
 
     def list_directory(path = ".")
-      entries = Dir.glob("*", base: path, sort: true).map { |entry| {:name => entry, :stat => File.stat(path + "/" + entry)} }
+      entries = @options[:list_all] ? 
+        Dir.entries(path).sort : 
+        Dir.glob("*", base: path, sort: true)
+      entries = entries.map { |entry| {:name => entry, :stat => File.stat(path + "/" + entry)} }
       render_entries(entries)
     end
 
@@ -95,7 +98,7 @@ module RLs
     end
 
     def skip?(entry)
-      entry[:name].start_with?(".")
+      @options[:list_all] ? false : entry[:name].start_with?(".")
     end
 
     def parse_arguments(argv)
@@ -104,6 +107,7 @@ module RLs
       parser = OptionParser.new
 
       parser.on("-l") { options[:list] = true }
+      parser.on("-a") { options[:list_all] = true }
       args = parser.parse(argv)
       
       [options, args]
